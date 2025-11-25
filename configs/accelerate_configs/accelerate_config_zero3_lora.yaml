@@ -1,0 +1,29 @@
+compute_environment: LOCAL_MACHINE
+deepspeed_config: 
+  deepspeed_multinode_launcher: standard
+  gradient_clipping: 1.0
+  offload_optimizer_device: none
+  offload_param_device: none
+  zero3_init_flag: true
+  zero3_save_16bit_model: true
+  zero_stage: 3
+  zero_optimization:
+    round_robin_gradients: true
+    overlap_comm: true
+    contiguous_gradients: true
+    reduce_bucket_size: "auto"
+    stage3_prefetch_bucket_size: "auto"
+    stage3_param_persistence_threshold: "auto"
+    sub_group_size: 1e9
+    stage3_max_live_parameters: 1e9
+    stage3_max_reuse_distance: 1e9
+distributed_type: DEEPSPEED
+fsdp_config: {}
+machine_rank: 0
+main_process_ip: null
+main_process_port: 20333
+main_training_function: main
+mixed_precision: bf16
+num_machines: 1
+num_processes: 8
+use_cpu: false

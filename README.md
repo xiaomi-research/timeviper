@@ -1,20 +1,21 @@
 # TimeViper: A Hybrid Mamba-Transformer Vision-Language Model for Efficient Long Video Understanding
 
-<div align="center">
+<p align="center">
+        🌐 <a href="https://xuboshen.github.io/TimeViper/">Project Page</a> &nbsp&nbsp | &nbsp&nbsp 📑 <a href="https://arxiv.org/abs/2511.16595">Paper</a> &nbsp&nbsp | &nbsp&nbsp  🤗 <a href="https://huggingface.co/Boshenxx/TimeViper-9B">Model</a>
+<br>
 
-<a href="https://xuboshen.github.io/TimeViper/">
-  <img src="https://img.shields.io/badge/Project%20Page-TimeViper-ff69b4.svg">
-</a>
-<a href='https://arxiv.org/abs/2511.16595'><img src='https://img.shields.io/badge/arXiv-2511.16595-b31b1b.svg'></a>
+</p>
 
-</div>
+
+<p align="center" width="100%">
+<a target="_blank"><img src="assets/timeviper.png" alt="TimeViper" style="width: 80%; min-width: 200px; display: block; margin: auto;"></a>
+</p>
 
 ---
 
 # 📰 News
-
-- **[2025.11.21]** 🚀 Initial release of the TimeViper repository.  
-  The paper is available on [arXiv](https://arxiv.org/abs/2511.16595).
+- **[2025.11.25]** We provide model **w/ Nano or w/ Qwen** as backbones, and evaluation codes for **MCQ (VideoMME, LVBench, MLVU, LongVideoBench, EgoSchema, MVBench, TempCompass, CGBench), TVG (Charades, ActivityNet, TVGBench), VDC (VDC), and DVC (YouCook2)** benchmarks.  
+- **[2025.11.21]** 🚀 Initial release of the TimeViper repository.  The paper is available on [arXiv](https://arxiv.org/abs/2511.16595).
 
 
 # 📖 Introduction
@@ -40,9 +41,11 @@ We introduce **TransV**, the first token-transfer module that compresses vision 
 
 # 📝 TODO List
 
-- [ ] Release model weights  
-- [ ] Add full training code  
-- [ ] Add inference code  
+- [x] Add inference code  
+- [x] Add model code  
+- [x] Add training code  
+- [ ] Release model weights
+- [ ] Add detailed instructions for preparing data & env & evaluation & training  
 - [ ] Support training with Qwen and Nano backbones  
 - [ ] Support pdrop and TransV for both training and evaluation  
 
@@ -53,7 +56,7 @@ We introduce **TransV**, the first token-transfer module that compresses vision 
 
 Model | Backbone |  Max Frames | Checkpoint
 --- | --- | --- | ---
-TimeViper-9B | Nanov2-9B  | 5k | Coming Soon
+TimeViper-9B | Nanov2-9B  | 5k | [Coming Soon](https://huggingface.co/Boshenxx/TimeViper-9B)
 TimeViper-9B-w/TransV | Nanov2-9B | 10k+ | Coming Soon
 
 
@@ -61,22 +64,7 @@ TimeViper-9B-w/TransV | Nanov2-9B | 10k+ | Coming Soon
 
 # 🛠️ Installation
 
-```bash
-git clone https://github.com/xiaomi-research/TimeViper.git
-cd TimeViper
-
-conda create -n timeviper python=3.10 -y
-conda activate timeviper
-
-pip install vllm==0.10.2
-pip install transformers==4.56.2
-
-pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 \
-    --index-url https://download.pytorch.org/whl/cu128
-
-pip install peft==0.16.0 deepspeed==0.17.2
-pip install opencv-python==4.8.0.74 opencv-contrib-python==4.8.0.74
-```
+Environment requirements: [INSTALL.md](./docs/INSTALL.md)
 
 ##  🚀 Quick Start
 ### Training
@@ -84,8 +72,6 @@ Coming Soon.
 
 ### Evaluation
 Coming Soon.
-
-
 
 # 📄 License
 This project is released under the Apache 2.0 License.
@@ -102,4 +88,4 @@ If you find TimeViper useful for your research and applications, please cite our
 ```
 
 # 🙏 Acknowledgement
-We thank the following open-source projects for their contributions: [Cobra](https://github.com/h-zhao1997/cobra), [Vamba](https://github.com/TIGER-AI-Lab/Vamba), [transformers](https://github.com/huggingface/transformers), [vllm](https://github.com/vllm-project/vllm), [mamba](https://github.com/state-spaces/mamba), [Time-R1](https://github.com/xiaomi-research/time-r1).
+We thank the following open-source projects for their contributions: [Cobra](https://github.com/h-zhao1997/cobra), [Vamba](https://github.com/TIGER-AI-Lab/Vamba), [transformers](https://github.com/huggingface/transformers), [vllm](https://github.com/vllm-project/vllm), [mamba](https://github.com/state-spaces/mamba), [Time-R1](https://github.com/xiaomi-research/time-r1), [VideoChat-Flash](https://github.com/OpenGVLab/VideoChat-Flash).
