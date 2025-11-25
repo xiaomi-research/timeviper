@@ -250,5 +250,5 @@ debug.py
 wandb/
 wandb
 *.jpg
-*.png
+/*.png
 /data
