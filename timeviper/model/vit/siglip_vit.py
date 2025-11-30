@@ -32,20 +32,19 @@ class SigLIPViTBackbone(TimmViTBackbone):
             default_image_size=default_image_size,
             use_zero3=use_zero3,
         )
+        ckpt = torch.load(
+            f"./ckpts/{SIGLIP_VISION_BACKBONES[vision_backbone_id]}.pth",
+            map_location="cpu",
+        )
         if use_zero3:
-            ckpt = torch.load(
-                "./ckpts/vit_so400m_patch14_siglip_384.pth", map_location="cpu"
-            )
             load_ckpt_from_deepspeed_zero(self.featurizer, ckpt, strict=True)
         else:
             self.featurizer.load_state_dict(
-                torch.load(
-                    "./ckpts/vit_so400m_patch14_siglip_384.pth", map_location="cpu"
-                ),
+                ckpt,
                 strict=True,
             )
         print(
-            f"Loaded pretrained SigLIP ViT Backbone from ./ckpts/vit_so400m_patch14_siglip_384.pth"
+            f"Loaded pretrained SigLIP ViT Backbone from ./ckpts/{SIGLIP_VISION_BACKBONES[vision_backbone_id]}.pth"
         )
 
     @property

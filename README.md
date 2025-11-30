@@ -64,7 +64,22 @@ TimeViper-9B-w/TransV | Nanov2-9B | 10k+ | Coming Soon
 
 # 🛠️ Installation
 
-Environment requirements: [INSTALL.md](./docs/INSTALL.md)
+We provide comprehensive documentation for setting up TimeViper. Please follow these guides in order:
+
+1. **[INSTALL.md](./docs/INSTALL.md)** - Environment Setup
+   - Install dependencies and required packages
+   - Configure CUDA, PyTorch, and other system requirements
+   - Set up the Python virtual environment
+
+2. **[MODEL.md](./docs/MODEL.md)** - Model Checkpoint Download
+   - Download ViT backbone and LLM backbone checkpoints from Hugging Face
+   - Automated download script for all required models
+   - Verification of checkpoint integrity
+
+3. **[DATA.md](./docs/DATA.md)** - Dataset Preparation
+   - Prepare training and evaluation datasets
+   - Instructions for downloading benchmark datasets
+   - Data directory structure and format specifications
 
 ##  🚀 Quick Start
 ### Training

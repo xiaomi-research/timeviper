@@ -428,39 +428,41 @@ class Qwen2Model(Qwen2PreTrainedModel):
 
             merge_module_name = getattr(config, "merge_module", "no_merge")
             if merge_module_name == "CrossAttention":
-                self.merge_module_names = [
-                    "attention" for _ in self.pdrop_args.get("pdrop_layers", [])
-                ]
-                self.merge_modules = nn.ModuleList(
-                    [
-                        Qwen2VLSdpaCrossAttention(config, layer_idx=idx)
-                        for idx in range(config.num_hidden_layers)
-                        if idx in self.pdrop_args.get("pdrop_layers", [])
-                    ]
+                self.merge_module_names = []
+                self.merge_modules = []
+                for pdrop_layer_idx, _ in enumerate(
+                    self.pdrop_args.get("pdrop_layers", [])
+                ):
+                    if (
+                        "drop"
+                        in self.pdrop_args["pdrop_compress_types"][pdrop_layer_idx]
+                    ):
+                        self.merge_module_names.append("none")
+                        self.merge_modules.append(nn.Identity())
+                    else:
+                        self.merge_module_names.append("attention")
+                        self.merge_modules.append(
+                            Qwen2VLSdpaCrossAttention(
+                                config,
+                                layer_idx=self.pdrop_args.get("pdrop_layers", [])[
+                                    pdrop_layer_idx
+                                ],
+                            )
+                        )
+                self.merge_modules = nn.ModuleList(self.merge_modules)
+                self.alpha = nn.Parameter(
+                    (
+                        torch.zeros(
+                            sum(
+                                [
+                                    1
+                                    for i in self.merge_modules
+                                    if not isinstance(i, nn.Identity)
+                                ]
+                            )
+                        )
+                    )
                 )
-                self.alpha = nn.Parameter((torch.zeros(len(self.merge_modules))))
-                self.merge_ffn_modules = nn.ModuleList(
-                    [
-                        Qwen2MLP(config)
-                        for idx in range(config.num_hidden_layers)
-                        if idx in self.pdrop_args.get("pdrop_layers", [])
-                    ]
-                )
-                self.alpha_ffn = nn.Parameter(
-                    (torch.zeros(len(self.merge_ffn_modules)))
-                )
-            elif merge_module_name == "CrossAttention_wo_MLP":
-                self.merge_module_names = [
-                    "attention" for _ in self.pdrop_args.get("pdrop_layers", [])
-                ]
-                self.merge_modules = nn.ModuleList(
-                    [
-                        Qwen2VLSdpaCrossAttention(config, layer_idx=idx)
-                        for idx in range(config.num_hidden_layers)
-                        if idx in self.pdrop_args.get("pdrop_layers", [])
-                    ]
-                )
-                self.alpha = nn.Parameter((torch.zeros(len(self.merge_modules))))
                 self.merge_ffn_modules = None
                 self.alpha_ffn = None
             elif merge_module_name == "no_merge":
@@ -498,11 +500,8 @@ class Qwen2Model(Qwen2PreTrainedModel):
             new_text_features = (
                 features[start_index:, :] + self.alpha[cur_num].tanh() * merged_features
             )
-        else:
-            raise ValueError(
-                f"Unsupported merge module type: {self.merge_module_names[cur_num]}"
-            )
-
+        elif self.merge_module_names[cur_num] == "none":
+            new_text_features = features[start_index:, :]
         if self.alpha_ffn is not None:
             new_text_features = new_text_features + self.alpha_ffn[
                 cur_num

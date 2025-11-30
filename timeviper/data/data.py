@@ -492,7 +492,7 @@ class TemporalVideoGroundingDataset(BaseMultimodalDataset):
                 ts_prompt = timestamp_prompt.format(item["duration"], num_frames)
                 if "<image>" in value:
                     val_clean = value.replace("<image>", token_str)
-                    value = f"{val_clean}{MultimodalTokenConfig.MMODAL_TOKEN_SEP}{ts_prompt}"
+                    value = f"{token_str}{MultimodalTokenConfig.MMODAL_TOKEN_SEP}{ts_prompt}{template.format(val_clean)}"
                 else:
                     value = f"{token_str}{MultimodalTokenConfig.MMODAL_TOKEN_SEP}{ts_prompt}{template.format(value)}"
 
@@ -519,7 +519,7 @@ class DenseVideoCaptioningDataset(BaseMultimodalDataset):
                 ts_prompt = timestamp_prompt.format(item["duration"], num_frames)
                 if "<image>" in value:
                     val_clean = value.replace("<image>", token_str)
-                    value = f"{val_clean}{MultimodalTokenConfig.MMODAL_TOKEN_SEP}{ts_prompt}"
+                    value = f"{token_str}{MultimodalTokenConfig.MMODAL_TOKEN_SEP}{ts_prompt}{val_clean}"
                 else:
                     value = f"{token_str}{MultimodalTokenConfig.MMODAL_TOKEN_SEP}{ts_prompt}{value}"
 

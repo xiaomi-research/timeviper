@@ -77,7 +77,6 @@ class GenericTimeViperVLM(nn.Module, GenerationMixin):
     ) -> None:
         super().__init__()
 
-        # --- 从 VLM 基类合并的属性 ---
         self.model_family = f"{llm_backbone.llm_family}"
         self.model_id = model_id
         self.vision_backbone = vision_backbone
