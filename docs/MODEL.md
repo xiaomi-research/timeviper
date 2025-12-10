@@ -39,6 +39,8 @@ This requires `hfd.sh` to be available in the project root directory.
 | siglip-vit-b16-384px | vit_base_patch16_siglip_384 | 384px | https://huggingface.co/timm/vit_base_patch16_siglip_384.v2_webli | vit_base_patch16_siglip_384.pth |
 | siglip-vit-so400m | vit_so400m_patch14_siglip_224 | 224px | https://huggingface.co/timm/vit_so400m_patch14_siglip_224.v2_webli | vit_so400m_patch14_siglip_224.pth |
 | siglip-vit-so400m-384px | vit_so400m_patch14_siglip_384 | 384px | https://huggingface.co/timm/vit_so400m_patch14_siglip_384.v2_webli | vit_so400m_patch14_siglip_384.pth |
+| dinov2-vit-l | vit_large_patch14_reg4_dinov2.lvd142m | 224px | https://huggingface.co/timm/vit_large_patch14_dinov2.lvd142m | vit_large_patch14_reg4_dinov2.lvd142m |
+| internvideo2-1b-16-224px | N/A | 224px | https://huggingface.co/OpenGVLab/InternVideo2-CLIP-1B-224p-f8 | InternVideo2-1B_f4_vision.pt |
 
 ### Setup Instructions
 
@@ -80,6 +82,12 @@ If you prefer manual download, follow these steps:
    # ...and so on for other models
    ```
 
+   **For InternVideo2:**
+   Download the model file (likely named `pytorch_model.bin` or similar) from the Hugging Face repository and rename it to `InternVideo2-1B_f4_vision.pt`.
+
+   **For DINOv2:**
+   Download the model file and rename it to `vit_large_patch14_reg4_dinov2.lvd142m`.
+
 #### Step 3: Verify Installation
 
 Your `./ckpts/` directory should contain all five checkpoint files:
@@ -90,7 +98,9 @@ Your `./ckpts/` directory should contain all five checkpoint files:
 ├── vit_base_patch16_siglip_256.pth
 ├── vit_base_patch16_siglip_384.pth
 ├── vit_so400m_patch14_siglip_224.pth
-└── vit_so400m_patch14_siglip_384.pth
+├── vit_so400m_patch14_siglip_384.pth
+├── vit_large_patch14_reg4_dinov2.lvd142m
+└── InternVideo2-1B_f4_vision.pt
 ```
 
 The SigLIPViTBackbone class will automatically load the appropriate checkpoint during initialization.

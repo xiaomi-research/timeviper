@@ -14,6 +14,7 @@
 ---
 
 # 📰 News
+- **[2025.12.10]** Added support for DINOv2 and InternVideo2 vision encoders.  
 - **[2025.11.25]** We provide model **w/ Nano or w/ Qwen** as backbones, and evaluation codes for **MCQ (VideoMME, LVBench, MLVU, LongVideoBench, EgoSchema, MVBench, TempCompass, CGBench), TVG (Charades, ActivityNet, TVGBench), VDC (VDC), and DVC (YouCook2)** benchmarks.  
 - **[2025.11.21]** 🚀 Initial release of the TimeViper repository.  The paper is available on [arXiv](https://arxiv.org/abs/2511.16595).
 
@@ -86,7 +87,18 @@ We provide comprehensive documentation for setting up TimeViper. Please follow t
 Coming Soon.
 
 ### Evaluation
-Coming Soon.
+```bash
+# evaluate
+python evaluate.py \
+    --dataset videomme \
+    --split test \
+    --output_dir ./output/timeviper_base/videomme \
+    --curr_idx 0 --total_idx 1
+# calculate metrics 
+python eval/vllm_inference/eval_all.py --model_name $MODEL_NAME --split $CURRENT_SPLIT --dataset $CURRENT_EVAL_DATASET --max_num_frames $MAX_FRAME_NUM \
+        --eval_root $PART_OUTPUT_DIR
+
+```
 
 # 📄 License
 This project is released under the Apache 2.0 License.

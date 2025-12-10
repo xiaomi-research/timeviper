@@ -13,7 +13,6 @@ dataset
 
 ## PyTorch
 *.jsonl
-scripts
 train/data_configs
 test_context.py
 /data/

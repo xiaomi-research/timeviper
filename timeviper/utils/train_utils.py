@@ -6,7 +6,7 @@ import sys
 from contextlib import suppress
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import deepspeed
 import numpy as np
@@ -29,9 +29,18 @@ except ImportError:
 
 def load_ckpt_from_deepspeed_zero(model, state_dict, strict=False):
     with deepspeed.zero.GatheredParameters(model.parameters(), modifier_rank=0):
+        first_param = next(model.parameters())
         if deepspeed.comm.get_rank() == 0:
             print("Rank 0 is loading the checkpoint...")
             model.load_state_dict(state_dict, strict=strict)
+
+
+def _load_checkpoint(featurizer, cfg: Dict[str, Any], use_zero3: bool) -> None:
+    ckpt = torch.load(cfg["ckpt_path"], map_location="cpu")
+    if use_zero3 and cfg.get("zero3_loader") is not None:
+        load_ckpt_from_deepspeed_zero(featurizer, ckpt, strict=True)
+    else:
+        featurizer.load_state_dict(ckpt, strict=True)
 
 
 def load_image(image_file):

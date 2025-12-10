@@ -12,17 +12,12 @@
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
 
-
-from .generic_vlm import GenericTimeViperVLM
-from .hybrid_vlm import HybridTimeViperVLM
-
 """
 materialize.py
 
 Factory class for initializing Vision Backbones, LLM Backbones, and VLMs from a set registry; provides and exports
 individual functions for clear control flow.
 """
-
 from typing import Optional, Tuple
 
 from transformers import PreTrainedTokenizerBase
@@ -31,54 +26,37 @@ from timeviper.model.llm.base_llm import LLMBackbone
 from timeviper.model.llm.llm_factory import LLMBackboneFactory
 from timeviper.model.vit import (
     ImageTransform,
-    SigLIPViTBackbone,
+    InternVideo2ViTBackbone,
+    TimmCheckpointBackbone,
     VisionBackbone,
 )
+from timeviper.model.vit.registry import get_vision_backbone_config
 
-# === Vision Backbone Registry ===
-VISION_BACKBONES = {
-    # === 224px Backbones ===
-    "siglip-vit-so400m": {
-        "cls": SigLIPViTBackbone,
-        "kwargs": {"default_image_size": 224},
-    },
-    # === Assorted SigLIP Backbones ===
-    "siglip-vit-b16-224px": {
-        "cls": SigLIPViTBackbone,
-        "kwargs": {"default_image_size": 224},
-    },
-    "siglip-vit-b16-256px": {
-        "cls": SigLIPViTBackbone,
-        "kwargs": {"default_image_size": 256},
-    },
-    "siglip-vit-b16-384px": {
-        "cls": SigLIPViTBackbone,
-        "kwargs": {"default_image_size": 384},
-    },
-    "siglip-vit-so400m-384px": {
-        "cls": SigLIPViTBackbone,
-        "kwargs": {"default_image_size": 384},
-    },
-}
+from .generic_vlm import GenericTimeViperVLM
+from .hybrid_vlm import HybridTimeViperVLM
 
 
 def get_vision_backbone_and_transform(
     vision_backbone_id: str, image_resize_strategy: str, use_zero3: bool = False
 ) -> Tuple[VisionBackbone, ImageTransform]:
     """Instantiate a Vision Backbone, returning both the nn.Module wrapper class and default Image Transform."""
-    if vision_backbone_id in VISION_BACKBONES:
-        vision_cfg = VISION_BACKBONES[vision_backbone_id]
-        vision_backbone: VisionBackbone = vision_cfg["cls"](
-            vision_backbone_id,
-            image_resize_strategy,
-            use_zero3=use_zero3,
-            **vision_cfg["kwargs"],
-        )
-        image_transform = vision_backbone.get_image_transform()
-        return vision_backbone, image_transform
+    vision_cfg = get_vision_backbone_config(vision_backbone_id)
 
+    if vision_cfg["type"] == "timm":
+        vision_backbone = TimmCheckpointBackbone(
+            vision_backbone_id, image_resize_strategy, use_zero3=use_zero3
+        )
+    elif vision_cfg["type"] == "internvideo2":
+        vision_backbone = InternVideo2ViTBackbone(
+            vision_backbone_id, image_resize_strategy, use_zero3=use_zero3
+        )
     else:
-        raise ValueError(f"Vision Backbone `{vision_backbone_id}` is not supported!")
+        raise ValueError(
+            f"Vision Backbone type `{vision_cfg['type']}` is not supported!"
+        )
+
+    image_transform = vision_backbone.get_image_transform()
+    return vision_backbone, image_transform
 
 
 def get_llm_backbone_and_tokenizer(
@@ -125,7 +103,6 @@ def get_vlm(
     visual_token_order="raw",
 ):
     """Lightweight wrapper around initializing a VLM, mostly for future-proofing (if one wants to add a new VLM)."""
-
     family = llm_backbone.llm_family
     if family in ["nano"]:
         return HybridTimeViperVLM(
