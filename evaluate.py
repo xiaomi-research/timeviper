@@ -52,13 +52,13 @@ def get_args():
         choices=["tg", "mcq", "caption"],
     )
     parser.add_argument(
-        "--model_base", type=str, default="../pretrained_models/Qwen2.5-VL-7B-Instruct"
+        "--model_base", type=str, default="./ckpts/TimeViper-9B-wo-TransV"
     )
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="checkpoints",
+        default="./outputs/timeviper_eval_base",
         help="Directory to save checkpoints",
     )
     parser.add_argument(
@@ -97,7 +97,7 @@ def get_args():
     )
     parser.add_argument("--use_vllm_inference", action="store_true")
     parser.add_argument(
-        "--conv_format", type=str, default="conv_mamba_chat_zephyr", help="Prompt type"
+        "--conv_format", type=str, default="nano_base", help="Prompt type"
     )
     parser.add_argument(
         "--sample_fps",
@@ -115,13 +115,13 @@ def get_args():
     parser.add_argument(
         "--max_num_frames",
         type=int,
-        default=128,
+        default=256,
         help="Maximum number of frames to sample from video, default is 128",
     )
     parser.add_argument(
         "--min_num_frames",
         type=int,
-        default=1,
+        default=32,
         help="Minimum number of frames to sample from video, default is 1",
     )
     parser.add_argument(
@@ -133,14 +133,14 @@ def get_args():
     parser.add_argument(
         "--arch_specifier",
         type=str,
-        default="no-align+gelu-mlp",
+        default="tome_mlp-16",
         help="Sample type for video sampling, default is 'middle'",
         # choices=["no-align+gelu-mlp", "no-align+tome_mlp", "no-align+ps_mlp"],
     )
     parser.add_argument(
         "--llm_backbone_id",
         type=str,
-        default="mamba-2.8b-zephyr",
+        default="nano-9b-v2-base",
         help="Model architecture to use, default is 'mamba-2.8b-zesphyr'",
     )
     parser.add_argument(

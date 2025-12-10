@@ -37,23 +37,23 @@ def get_args():
         "--dataset",
         help="Specify the dataset.",
     )
-    parser.add_argument("--split", type=str, default="test", help="dataset type")
+    parser.add_argument("--split", type=str, default="default", help="dataset type")
     parser.add_argument(
         "--model_name",
         type=str,
-        default="kl_cot_gaussian_03_iouv2_2500",
+        default="./ckpts/TimeViper-9B-wo-TransV",
         help="model name",
     )
     parser.add_argument(
         "--eval_root",
         type=str,
-        default="kl_cot_gaussian_03_iouv2_2500",
+        default="./outputs/timeviper_eval_base",
         help="model name",
     )
     parser.add_argument(
         "--max_num_frames",
         type=int,
-        default=64,
+        default=256,
         help="maximum number of frames to sample from each video",
     )
     return parser.parse_args()
