@@ -9,7 +9,6 @@ from typing import Callable, Tuple
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 def bipartite_soft_matching(
@@ -94,8 +93,6 @@ class ToMe16_mlp_hd64(nn.Module):
         token_order: str = "raw",
     ) -> None:
         super().__init__()
-        # self.mm_hidden_size = vision_dim
-        self.hw = 378 // 14  # 27, do not used
         # self.num_attention_heads = vision_cfg.num_attention_heads
         self.num_attention_heads = 16  # default is 16
         self.num_compressed_tokens = num_compressed_tokens
@@ -170,7 +167,7 @@ class ToMe16_mlp_hd64(nn.Module):
                 self.num_compressed_tokens * num_frames
             )  # compress to 16 tokens / frame
         else:
-            num_tome_tokens = 64
+            num_tome_tokens = self.num_compressed_tokens * local_num_frames
 
         x = self.merge_tokens(
             x, target_num_token=num_tome_tokens, token_order=self.token_order

@@ -52,11 +52,10 @@ def _parse_compressed_tokens(arch_specifier: str) -> int:
     """Helper function to parse compressed tokens, moved here to be shared."""
     if "tome_mlp" in arch_specifier:
         parts = arch_specifier.split("-")
-        try:
-            if len(parts) > 2 and parts[2].isdigit():
-                return int(parts[2])
-        except (IndexError, ValueError):
-            return 16
+        assert parts[
+            -1
+        ].isdigit(), f"Cannot parse compressed tokens from {arch_specifier}"
+        return int(parts[-1])
     return 16
 
 
@@ -71,7 +70,7 @@ class GenericTimeViperVLM(nn.Module, GenerationMixin):
         vision_backbone: VisionBackbone,
         llm_backbone: GenericLLMBackbone,
         enable_mixed_precision_training: bool = True,
-        arch_specifier: str = "gelu-mlp",
+        arch_specifier: str = "gelu_mlp",
         visual_token_order: str = "raw",
         disable_data_packing: bool = False,
     ) -> None:
@@ -180,14 +179,14 @@ class GenericTimeViperVLM(nn.Module, GenerationMixin):
     def _initialize_projector(self, visual_token_order):
         vision_embed_dim = self.vision_backbone.embed_dim
         llm_embed_dim = self.llm_backbone.embed_dim
-        if self.arch_specifier.endswith("gelu-mlp"):
+        if "gelu_mlp" in self.arch_specifier:
             self.projector = MLPProjector(vision_embed_dim, llm_embed_dim)
         elif "tome_mlp" in self.arch_specifier:
             self.num_compressed_tokens = _parse_compressed_tokens(self.arch_specifier)
             self.projector = ToMe16_mlp_hd64(
                 vision_embed_dim,
                 llm_embed_dim,
-                mlp_type=self.arch_specifier.split("+")[-1],
+                mlp_type=self.arch_specifier.split("-")[0],
                 num_compressed_tokens=self.num_compressed_tokens,
                 token_order=visual_token_order,
             )
@@ -377,6 +376,8 @@ class GenericTimeViperVLM(nn.Module, GenerationMixin):
             vision_identifier = self.vision_backbone.get_identifier
             if vision_identifier in ["siglip", "dinov2siglip", "dinov2"]:
                 return self.projector(patch_features, compress=True, local_num_frames=1)
+            elif vision_identifier in ["internvideo2"]:
+                return self.projector(patch_features, compress=True, local_num_frames=4)
         else:
             visual_embeddings = self.projector(patch_features)
             self.num_compressed_tokens = visual_embeddings.shape[1]
@@ -824,7 +825,7 @@ class GenericTimeViperVLM(nn.Module, GenerationMixin):
         vision_backbone: VisionBackbone,
         llm_backbone: GenericLLMBackbone,
         enable_mixed_precision_training: bool = True,
-        arch_specifier: str = "gelu-mlp",
+        arch_specifier: str = "gelu_mlp",
         visual_token_order="raw",
     ) -> "GenericTimeViperVLM":
         vlm = cls(

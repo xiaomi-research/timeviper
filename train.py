@@ -17,10 +17,9 @@ import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 import deepspeed
-import regex as re
 import torch
 import torch.distributed as dist
 from peft import LoraConfig, get_peft_model
@@ -217,7 +216,7 @@ class ModelArguments:
         default="cobra-siglip+3b",
         metadata={"help": "Identifier for the model, used for saving/loading"},
     )
-    arch_specifier: Optional[str] = field(default="no-align+gelu-mlp")
+    arch_specifier: Optional[str] = field(default="gelu_mlp")
     vision_backbone_id: Optional[str] = field(default="siglip-vit-so400m-384px")
     llm_backbone_id: Optional[str] = field(default="mamba-2.8b-zephyr")
     image_resize_strategy: Optional[str] = field(default="resize-naive")
@@ -331,7 +330,6 @@ def load_all_modules(use_zero3):
 def load_model(model_args, training_args):
     print("Loading model...")
 
-    ds_config = training_args.deepspeed
     if training_args.use_zero3:
         with deepspeed.zero.Init():
             model, tokenizer, image_transform = load_all_modules(use_zero3=True)
