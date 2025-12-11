@@ -1,2 +1,2 @@
-from .mlp import MLPProjector
-from .tome import ToMe16_mlp_hd64
+from .mlp import MLPProjector, MultiMLPProjector
+from .tome import MultiToMe16_mlp_hd64, ToMe16_mlp_hd64

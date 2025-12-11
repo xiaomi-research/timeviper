@@ -14,7 +14,7 @@
 ---
 
 # 📰 News
-- **[2025.12.10]** Added support for DINOv2 and InternVideo2 vision encoders.  
+- **[2025.12.11]** Added support for any two visual encoder combinations, such as DINOv2, InternVideo2, and SigLIP2.
 - **[2025.11.25]** We provide model **w/ Nano or w/ Qwen** as backbones, and evaluation codes for **MCQ (VideoMME, LVBench, MLVU, LongVideoBench, EgoSchema, MVBench, TempCompass, CGBench), TVG (Charades, ActivityNet, TVGBench), VDC (VDC), and DVC (YouCook2)** benchmarks.  
 - **[2025.11.21]** 🚀 Initial release of the TimeViper repository.  The paper is available on [arXiv](https://arxiv.org/abs/2511.16595).
 
@@ -81,6 +81,11 @@ We provide comprehensive documentation for setting up TimeViper. Please follow t
    - Prepare training and evaluation datasets
    - Instructions for downloading benchmark datasets
    - Data directory structure and format specifications
+
+4. **[USAGE.md](./docs/USAGE.md)** - Usage Guide
+   - Configure visual encoders, MLPs, and LLM backbones
+   - Enable training-free token dropping (pdrop)
+   - Advanced model configuration options
 
 ##  🚀 Quick Start
 ### Training

@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 # --------------------------------------------------------
 
-from typing import Callable, Tuple
+from typing import Callable, Dict, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -175,3 +175,57 @@ class ToMe16_mlp_hd64(nn.Module):
         x = self.projector(x)
 
         return x
+
+
+class MultiToMe16_mlp_hd64(nn.Module):
+    def __init__(
+        self,
+        vision_dims: Dict[str, int],
+        llm_dim: int,
+        mlp_type: str = "tome_mlp",
+        num_compressed_tokens: int = 16,
+        token_order: str = "raw",
+    ) -> None:
+        super().__init__()
+        self.projectors = nn.ModuleDict()
+        self.keys = list(vision_dims.keys())
+        for key, dim in vision_dims.items():
+            if "tome_mlp" in mlp_type:
+                self.projectors[key] = ToMe16_mlp_hd64(
+                    dim, llm_dim, mlp_type, num_compressed_tokens, token_order
+                )
+            else:
+                raise ValueError(f"Projector with `{mlp_type}` is not supported!")
+
+    def forward(
+        self,
+        img_patches: Dict[str, torch.Tensor],
+        compress=False,
+        local_num_frames: Union[int, Dict[str, int]] = -1,
+    ) -> torch.Tensor:
+        outputs = []
+        for key in self.keys:
+            lnf = local_num_frames
+            if isinstance(local_num_frames, dict):
+                lnf = local_num_frames.get(key, -1)
+            outputs.append(
+                self.projectors[key](
+                    img_patches[key], compress=compress, local_num_frames=lnf
+                )
+            )
+
+        # two encoders
+        if len(outputs) == 2:
+            # internvideo2 + another vision encoder
+            if (
+                outputs[0].shape != outputs[1].shape
+                and outputs[0].numel() == outputs[1].numel()
+            ):
+                if outputs[0].shape[0] > outputs[1].shape[0]:
+                    outputs[1] = outputs[1].reshape(outputs[0].shape)
+                else:
+                    outputs[0] = outputs[0].reshape(outputs[1].shape)
+        if outputs[0].shape[1] != outputs[1].shape[1]:
+            return torch.cat(outputs, dim=1)
+        else:
+            return torch.stack(outputs, dim=2).flatten(1, 2)

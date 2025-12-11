@@ -170,26 +170,21 @@ class InternVideo2VisionTower(nn.Module):
         )
         return model
 
-    def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
-        # Expected input shape: (B, T, C, H, W)
-        # InternVideo2 expects: (B, C, T, H, W)
-        # The forward pass also handles single image case (T=1)
-        # import pdb; pdb.set_trace()
-        # is_video = pixel_values.ndim == 5
-        is_video = pixel_values.shape[1] > 1
-        # if not is_video:  # Single image: (B, C, H, W) -> (B, 1, C, H, W)
-        # pixel_values = pixel_values.unsqueeze(1)
-
-        # B, T, C, H, W = pixel_values.shape
-        # pixel_values = pixel_values.permute(0, 2, 1, 3, 4) # B, C, T, H, W
-        # T, B, C, H, W = pixel_values.shape
-        B, T, C, H, W = pixel_values.shape
-        pixel_values = pixel_values.permute(0, 2, 1, 3, 4)
-        # B, C, T, H, W --> B * T // 4, C, 4, H, W
+    def forward(
+        self, pixel_values: torch.Tensor, is_video: bool = None
+    ) -> torch.Tensor:
+        if is_video is None:
+            is_video = pixel_values.shape[1] > 1
         if is_video:
+            T, B, C, H, W = pixel_values.shape
+            pixel_values = pixel_values.permute(1, 2, 0, 3, 4)  # B, C, T, H, W
+            # B, C, T, H, W --> B * T // 4, C, 4, H, W
             pixel_values = pixel_values.reshape(B * (T // 4), C, 4, H, W)
+        else:
+            B, T, C, H, W = pixel_values.shape
+            pixel_values = pixel_values.permute(0, 2, 1, 3, 4)
         # The model returns patch features, excluding the CLS token
-        image_embeds = self.vision_tower(pixel_values, use_image=(T == 1))
+        image_embeds = self.vision_tower(pixel_values, use_image=(not is_video))
 
         # Output: (B, T*num_patches_per_frame, D)
         return image_embeds[:, 1:, :]

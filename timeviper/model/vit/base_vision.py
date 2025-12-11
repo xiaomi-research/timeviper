@@ -97,7 +97,7 @@ class VisionBackbone(nn.Module, ABC):
     def get_fsdp_wrapping_policy(self) -> Callable: ...
 
     @abstractmethod
-    def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
+    def forward(self, pixel_values: torch.Tensor, **kwargs) -> torch.Tensor:
         """Run a forward pass through the featurizer given a set of processed images, returning patch/grid features."""
         raise NotImplementedError
 
@@ -272,7 +272,7 @@ class TimmViTBackbone(VisionBackbone, ABC):
         return partial(_or_policy, policies=[vit_wrap_policy, transformer_block_policy])
 
     def forward(
-        self, pixel_values: Union[torch.Tensor, Dict[str, torch.Tensor]]
+        self, pixel_values: Union[torch.Tensor, Dict[str, torch.Tensor]], **kwargs
     ) -> torch.Tensor:
         """Runs transformed image/pixel tensor through vision backbone, returning _all_ patch features."""
         return self.featurizer(pixel_values)[0]

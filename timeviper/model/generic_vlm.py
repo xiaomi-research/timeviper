@@ -30,6 +30,8 @@ from transformers.modeling_outputs import CausalLMOutputWithPast
 from timeviper.model.llm import GenericLLMBackbone
 from timeviper.model.projector import (
     MLPProjector,
+    MultiMLPProjector,
+    MultiToMe16_mlp_hd64,
     ToMe16_mlp_hd64,
 )
 from timeviper.model.vit import VisionBackbone
@@ -50,13 +52,9 @@ def print_grad(name):
 
 def _parse_compressed_tokens(arch_specifier: str) -> int:
     """Helper function to parse compressed tokens, moved here to be shared."""
-    if "tome_mlp" in arch_specifier:
-        parts = arch_specifier.split("-")
-        assert parts[
-            -1
-        ].isdigit(), f"Cannot parse compressed tokens from {arch_specifier}"
-        return int(parts[-1])
-    return 16
+    parts = arch_specifier.split("-")
+    assert parts[-1].isdigit(), f"Cannot parse compressed tokens from {arch_specifier}"
+    return int(parts[-1])
 
 
 class GenericTimeViperVLM(nn.Module, GenerationMixin):
@@ -179,7 +177,32 @@ class GenericTimeViperVLM(nn.Module, GenerationMixin):
     def _initialize_projector(self, visual_token_order):
         vision_embed_dim = self.vision_backbone.embed_dim
         llm_embed_dim = self.llm_backbone.embed_dim
-        if "gelu_mlp" in self.arch_specifier:
+        if hasattr(self.vision_backbone, "backbone_ids") and isinstance(
+            self.vision_backbone.backbone_ids, list
+        ):
+            vision_dims = {}
+            for bid in self.vision_backbone.backbone_ids:
+                safe_bid = bid.replace("-", "_")
+                vision_dims[bid] = self.vision_backbone.backbones[safe_bid].embed_dim
+
+            if "gelu_mlp" in self.arch_specifier:
+                self.projector = MultiMLPProjector(vision_dims, llm_embed_dim)
+            elif "tome_mlp" in self.arch_specifier:
+                self.num_compressed_tokens = _parse_compressed_tokens(
+                    self.arch_specifier
+                )
+                self.projector = MultiToMe16_mlp_hd64(
+                    vision_dims,
+                    llm_embed_dim,
+                    mlp_type=self.arch_specifier.split("-")[0],
+                    num_compressed_tokens=self.num_compressed_tokens,
+                    token_order=visual_token_order,
+                )
+            else:
+                raise ValueError(
+                    f"MultiViTBackbone only supports gelu_mlp or tome_mlp projector for now, got {self.arch_specifier}"
+                )
+        elif "gelu_mlp" in self.arch_specifier:
             self.projector = MLPProjector(vision_embed_dim, llm_embed_dim)
         elif "tome_mlp" in self.arch_specifier:
             self.num_compressed_tokens = _parse_compressed_tokens(self.arch_specifier)
@@ -244,18 +267,22 @@ class GenericTimeViperVLM(nn.Module, GenerationMixin):
             vision_inputs = (
                 pixel_values_videos if pixel_values_videos is not None else pixel_values
             )
+            is_video = pixel_values_videos is not None
             if self.training:
-                vision_features = self.vision_backbone(vision_inputs)
+                vision_features = self.vision_backbone(vision_inputs, is_video=is_video)
             else:
                 clips = vision_inputs.split(split_size=256)
                 clip_features = []
                 for clip in clips:
-                    clip_feature = self.projector_forward(self.vision_backbone(clip))
+                    clip_feature = self.projector_forward(
+                        self.vision_backbone(clip, is_video=is_video), is_video=is_video
+                    )
                     clip_features.append(clip_feature)
                 visual_embeddings = torch.cat(tensors=clip_features, dim=0)
         if self.training:
-            visual_embeddings = self.projector_forward(vision_features)
-
+            visual_embeddings = self.projector_forward(
+                vision_features, is_video=is_video
+            )
         assert input_ids is not None
         # ====================  DATA PACKING ====================
         seq_idx = None
@@ -371,15 +398,40 @@ class GenericTimeViperVLM(nn.Module, GenerationMixin):
             train_pdrop_args=train_pdrop_args if self.use_pdrop else None,
         )
 
-    def projector_forward(self, patch_features):
+    def projector_forward(self, patch_features, is_video=False):
         if "tome_mlp" in self.arch_specifier:
             vision_identifier = self.vision_backbone.get_identifier
             if vision_identifier in ["siglip", "dinov2siglip", "dinov2"]:
                 return self.projector(patch_features, compress=True, local_num_frames=1)
             elif vision_identifier in ["internvideo2"]:
-                return self.projector(patch_features, compress=True, local_num_frames=4)
+                local_num_frames = 4 if is_video else 1
+                visual_embeddings = self.projector(
+                    patch_features, compress=True, local_num_frames=local_num_frames
+                )
+                if is_video:
+                    b, n, d = visual_embeddings.shape
+                    visual_embeddings = visual_embeddings.view(b * 4, n // 4, d)
+                return visual_embeddings
+            elif vision_identifier in ["multivit"]:
+                local_num_frames_dict = {}
+                for bid in self.vision_backbone.backbone_ids:
+                    if "internvideo2" in bid:
+                        local_num_frames_dict[bid] = 4 if is_video else 1
+                    else:
+                        local_num_frames_dict[bid] = 1
+                return self.projector(
+                    patch_features,
+                    compress=True,
+                    local_num_frames=local_num_frames_dict,
+                )
         else:
+            vision_identifier = self.vision_backbone.get_identifier
             visual_embeddings = self.projector(patch_features)
+
+            if vision_identifier in ["internvideo2"] and is_video:
+                b, n, d = visual_embeddings.shape
+                visual_embeddings = visual_embeddings.view(b * 4, n // 4, d)
+            # avoid no definition during data packing using gelu_mlp
             self.num_compressed_tokens = visual_embeddings.shape[1]
         if torch.isnan(visual_embeddings).any():
             print("NaN values found in hidden_states.")
@@ -679,7 +731,9 @@ class GenericTimeViperVLM(nn.Module, GenerationMixin):
             _module_wrap_policy,
             module_classes={
                 MLPProjector,
+                MultiMLPProjector,
                 ToMe16_mlp_hd64,
+                MultiToMe16_mlp_hd64,
             },
         )
         return partial(

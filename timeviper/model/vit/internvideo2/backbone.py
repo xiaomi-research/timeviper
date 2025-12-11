@@ -102,9 +102,11 @@ class InternVideo2ViTBackbone(VisionBackbone):
             _or_policy, policies=[intern_video_wrap_policy, transformer_block_policy]
         )
 
-    def forward(self, pixel_values: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, pixel_values: torch.Tensor, is_video: bool = None, **kwargs
+    ) -> torch.Tensor:
         """Run a forward pass through the featurizer."""
-        return self.featurizer(pixel_values)
+        return self.featurizer(pixel_values, is_video=is_video)
 
     @property
     def default_image_resolution(self) -> Tuple[int, int, int]:

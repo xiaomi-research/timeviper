@@ -71,10 +71,33 @@ VISION_MODEL_REGISTRY = {
             },
         },
     },
+    "multi": {
+        "type": "multi",
+        "variants": {
+            "dinosiglip-vit-so-384px": {
+                "backbones": ["dinov2-vit-l", "siglip-vit-so400m-384px"],
+                "default_image_size": 384,
+            },
+        },
+    },
 }
 
 
 def get_vision_backbone_config(vision_backbone_id: str) -> Dict[str, Any]:
+    if "+" in vision_backbone_id:
+        backbones = vision_backbone_id.split("+")
+        # Recursively get configs to determine default_image_size (use max)
+        configs = [get_vision_backbone_config(b) for b in backbones]
+        default_image_size = max(c.get("default_image_size", 224) for c in configs)
+
+        return {
+            "type": "multi",
+            "vision_family": "multi",
+            "identifier": vision_backbone_id,
+            "backbones": backbones,
+            "default_image_size": default_image_size,
+        }
+
     for family, config in VISION_MODEL_REGISTRY.items():
         if vision_backbone_id in config["variants"]:
             variant_config = config["variants"][vision_backbone_id]

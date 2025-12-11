@@ -27,6 +27,7 @@ from timeviper.model.llm.llm_factory import LLMBackboneFactory
 from timeviper.model.vit import (
     ImageTransform,
     InternVideo2ViTBackbone,
+    MultiViTBackbone,
     TimmCheckpointBackbone,
     VisionBackbone,
 )
@@ -48,6 +49,10 @@ def get_vision_backbone_and_transform(
         )
     elif vision_cfg["type"] == "internvideo2":
         vision_backbone = InternVideo2ViTBackbone(
+            vision_backbone_id, image_resize_strategy, use_zero3=use_zero3
+        )
+    elif vision_cfg["type"] == "multi":
+        vision_backbone = MultiViTBackbone(
             vision_backbone_id, image_resize_strategy, use_zero3=use_zero3
         )
     else:

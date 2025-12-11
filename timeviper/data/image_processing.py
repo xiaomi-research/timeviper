@@ -278,20 +278,12 @@ class ImageProcessor(BaseImageProcessor):
             for image in images
         ]
         if isinstance(images[0], dict):
-            images_list = []
-            for key_encoder in ENCODER_SEQUENCE:
-                if key_encoder in images[0].keys():
-                    images_list.extend(
-                        [
-                            (
-                                image[key_encoder].squeeze(0)
-                                if image[key_encoder].shape[0] == 1
-                                else image[key_encoder]
-                            )
-                            for image in images
-                        ]
-                    )
-            images = torch.stack(images_list, dim=0)
+            keys = images[0].keys()
+            stacked_dict = {}
+            for k in keys:
+                stacked_dict[k] = torch.stack([img[k] for img in images], dim=0)
+            return stacked_dict
+
         else:
             images = torch.stack(images, dim=0)
         return images
@@ -397,8 +389,10 @@ class ImageProcessor(BaseImageProcessor):
             resample=resample,
         )
 
+        data = {}
         if images is not None:
-            pixel_values, vision_grid_thws = [], []
+            pixel_values = []
+            is_dict = False
             for image in images:
                 patches = self._preprocess(
                     image,
@@ -413,15 +407,28 @@ class ImageProcessor(BaseImageProcessor):
                     do_convert_rgb=do_convert_rgb,
                     input_data_format=input_data_format,
                 )
-                pixel_values.extend(patches)
-            pixel_values = np.array(pixel_values)
-            data = {"pixel_values": pixel_values}
+                if isinstance(patches, dict):
+                    is_dict = True
+                    pixel_values.append(patches)
+                else:
+                    pixel_values.extend(patches)
+            if is_dict:
+                keys = pixel_values[0].keys()
+                merged = {}
+                for k in keys:
+                    merged[k] = torch.cat([pv[k] for pv in pixel_values], dim=0)
+
+                data["pixel_values"] = merged
+            else:
+                pixel_values = np.array(pixel_values)
+                data["pixel_values"] = pixel_values
 
         if videos is not None:
-            pixel_values, vision_grid_thws = [], []
-            for images in videos:
+            pixel_values_videos = []
+            is_dict = False
+            for images_in_video in videos:
                 patches = self._preprocess(
-                    images,
+                    images_in_video,
                     do_resize=do_resize,
                     resample=resample,
                     do_rescale=do_rescale,
@@ -433,11 +440,25 @@ class ImageProcessor(BaseImageProcessor):
                     do_convert_rgb=do_convert_rgb,
                     input_data_format=input_data_format,
                 )
-                pixel_values.extend(patches)
-            pixel_values = np.array(pixel_values)
-            data = {"pixel_values_videos": pixel_values}
+                if isinstance(patches, dict):
+                    is_dict = True
+                    pixel_values_videos.append(patches)
+                else:
+                    pixel_values_videos.extend(patches)
 
-        return BatchFeature(data=data, tensor_type=return_tensors)
+            if is_dict:
+                keys = pixel_values_videos[0].keys()
+                merged = {}
+                for k in keys:
+                    merged[k] = torch.cat([pv[k] for pv in pixel_values_videos], dim=0)
+                data["pixel_values_videos"] = merged
+            else:
+                pixel_values_videos = np.array(pixel_values_videos)
+                data["pixel_values_videos"] = pixel_values_videos
+
+        has_dict = any(isinstance(v, dict) for v in data.values())
+        return_type = None if has_dict else return_tensors
+        return BatchFeature(data=data, tensor_type=return_type)
 
     def to_dict(self):
         data = super().to_dict()

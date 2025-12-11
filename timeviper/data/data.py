@@ -568,8 +568,21 @@ class PackedDataset(torch.utils.data.Dataset):
         for k, v_list in merged.items():
             if k == "input_ids":
                 final_batch["txt_seq_lens"] = [v.shape[1] for v in v_list]
-            if k in ["pixel_values", "pixel_values_videos"]:
-                final_batch[k] = torch.cat(v_list, dim=0)  # Batch dimension stack
+
+            if k in [
+                "pixel_values",
+                "pixel_values_videos",
+                "image_grid_thw",
+                "video_grid_thw",
+            ]:
+                if isinstance(v_list[0], dict):
+                    final_batch[k] = {}
+                    for sub_k in v_list[0].keys():
+                        final_batch[k][sub_k] = torch.cat(
+                            [v[sub_k] for v in v_list], dim=0
+                        )
+                else:
+                    final_batch[k] = torch.cat(v_list, dim=0)
             elif k in ["input_ids", "labels", "durations"]:
                 final_batch[k] = torch.cat(v_list, dim=1)  # Sequence dimension cat
             # Skip others like attention_mask which are handled by collator usually
@@ -617,8 +630,23 @@ class Qwen2VLCollator:
 
         # Collect Media Tensors
         def collect_tensor(key):
-            tensors = [x[key] for x in batch if key in x and x[key] is not None]
-            return torch.cat(tensors, dim=0) if tensors else None
+            items = [x[key] for x in batch if key in x and x[key] is not None]
+            if not items:
+                return None
+
+            # Check if items are Dicts (multi-encoder case)
+            if isinstance(items[0], dict):
+                # We need to concatenate tensors for each key separately
+                # items is a list of dicts: [{k1: T1, k2: T2}, {k1: T3, k2: T4}, ...]
+                # Result should be: {k1: cat(T1, T3), k2: cat(T2, T4)}
+                keys = items[0].keys()
+                collected = {}
+                for k in keys:
+                    tensors = [item[k] for item in items]
+                    collected[k] = torch.cat(tensors, dim=0)
+                return collected
+            else:
+                return torch.cat(items, dim=0)
 
         return {
             "input_ids": input_ids,
