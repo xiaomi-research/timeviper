@@ -14,6 +14,7 @@
 ---
 
 # 📰 News
+- **[2026.01.04]** Released visualization utilities for inspecting **attention score** in both attention and Mamba layers inside the LLM (see `visualize/nano_attention_visualization_cookbook.ipynb`).
 - **[2025.12.11]** Added support for any two visual encoder combinations, such as DINOv2, InternVideo2, and SigLIP2.
 - **[2025.11.25]** We provide model **w/ Nano or w/ Qwen** as backbones, and evaluation codes for **MCQ (VideoMME, LVBench, MLVU, LongVideoBench, EgoSchema, MVBench, TempCompass, CGBench), TVG (Charades, ActivityNet, TVGBench), VDC (VDC), and DVC (YouCook2)** benchmarks.  
 - **[2025.11.21]** 🚀 Initial release of the TimeViper repository.  The paper is available on [arXiv](https://arxiv.org/abs/2511.16595).
@@ -104,6 +105,25 @@ python eval/vllm_inference/eval_all.py --model_name $MODEL_NAME --split $CURRENT
         --eval_root $PART_OUTPUT_DIR
 
 ```
+
+---
+
+# 🔍 Visualization: Attention in Mamba-2 or Attention Layer
+
+We release utilities to **visualize internal token interactions inside the LLM**, covering both Transformer attention layers and Mamba/SSM (Mamba) layers.
+
+This might be useful for understanding how the model allocates computation across **video frames / visual tokens** and **text tokens**.
+
+## Notebook
+
+- `visualize/nano_attention_visualization_cookbook.ipynb`
+
+The notebook provides:
+
+- Extraction of per-layer signals for **attention layers** and **Mamba/SSM layers**.
+- Side-by-side plots across depth (early → mid → late layers).
+- Examples that highlight how interactions change with **long video inputs**.
+
 
 # 📄 License
 This project is released under the Apache 2.0 License.
